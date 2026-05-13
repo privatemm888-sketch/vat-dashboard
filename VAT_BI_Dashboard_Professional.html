@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAT Refund BI Dashboard — MSc BIA Dissertation</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+  :root {
+    --navy:       #1A3558;
+    --blue:       #2D6FA4;
+    --teal:       #3AAFA9;
+    --orange:     #E07B39;
+    --red:        #C0392B;
+    --green:      #27AE60;
+    --gold:       #F0A500;
+    --bg:         #F0F4F8;
+    --panel:      #FFFFFF;
+    --border:     #DDE3EC;
+    --text-dark:  #1C2B3A;
+    --text-mid:   #4A5568;
+    --text-light: #718096;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-dark);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--navy);
+    padding: 18px 32px 14px;
+    border-bottom: 4px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.3px;
+    line-height: 1.3;
+  }
+  .header-left p {
+    font-size: 12px;
+    color: #A8C4E0;
+    margin-top: 4px;
+  }
+  .header-right {
+    text-align: right;
+    font-size: 11px;
+    color: #A8C4E0;
+    line-height: 1.8;
+  }
+  .header-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    padding: 2px 10px;
+    font-size: 10px;
+    color: #fff;
+    margin-top: 6px;
+  }
+
+  /* ── LAYOUT ── */
+  .dashboard {
+    padding: 20px 24px 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* ── KPI ROW ── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .kpi-card {
+    background: var(--panel);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    position: relative;
+  }
+  .kpi-top {
+    height: 5px;
+    width: 100%;
+  }
+  .kpi-body {
+    padding: 14px 18px 16px;
+  }
+  .kpi-label {
+    font-size: 11px;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .kpi-value {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .kpi-unit {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+  }
+  .kpi-desc {
+    font-size: 10.5px;
+    color: var(--text-mid);
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+  .kpi-trend {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+  }
+  .trend-up   { background: #E8F5E9; color: #27AE60; }
+  .trend-down { background: #FDEDEC; color: #C0392B; }
+  .trend-warn { background: #FEF9E7; color: #E07B39; }
+
+  /* ── CHART GRID ── */
+  .charts-mid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .charts-bot {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .chart-card {
+    background: var(--panel);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    padding: 20px 22px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 2px;
+  }
+  .chart-subtitle {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-bottom: 14px;
+  }
+  .chart-wrap {
+    position: relative;
+    height: 280px;
+  }
+  .chart-wrap-tall {
+    position: relative;
+    height: 310px;
+  }
+
+  /* ── STAT BOX ── */
+  .stat-box {
+    background: #EBF5FB;
+    border: 1px solid #AED6F1;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--text-dark);
+    line-height: 1.8;
+  }
+  .stat-box b { color: var(--navy); }
+
+  /* ── HEATMAP ── */
+  .heatmap-container { overflow-x: auto; margin-top: 4px; }
+  table.heatmap {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 4px;
+    font-size: 12px;
+  }
+  table.heatmap th {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-mid);
+    font-size: 11px;
+    padding: 4px 6px;
+    background: #F7F9FC;
+    border-radius: 4px;
+  }
+  table.heatmap th.row-header {
+    text-align: left;
+    padding-left: 10px;
+    min-width: 110px;
+  }
+  table.heatmap td {
+    text-align: center;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 6px;
+    border-radius: 6px;
+    cursor: default;
+    transition: transform 0.15s;
+  }
+  table.heatmap td:hover { transform: scale(1.08); }
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 10.5px;
+    color: var(--text-light);
+  }
+  .legend-grad {
+    height: 10px;
+    width: 140px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #D6EAF8, #2980B9, #1A3558);
+    border: 1px solid var(--border);
+  }
+
+  /* ── SECTOR BADGES ── */
+  .sector-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .sector-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    color: var(--text-mid);
+    font-weight: 600;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    font-size: 10.5px;
+    color: var(--text-light);
+    padding: 16px 0 8px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-light);
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>VAT Refund Mechanisms &amp; Enterprise Liquidity — Analytical BI Dashboard</h1>
+    <p>The Impact of VAT Refund Efficiency on Enterprise Cash Flow Stability in Uzbekistan</p>
+  </div>
+  <div class="header-right">
+    MSc Business Intelligence &amp; Analytics<br>
+    Westminster International University in Tashkent<br>
+    <span class="header-badge">Dissertation Research · 2020–2024 · n = 200 observations</span>
+  </div>
+</div>
+
+<div class="dashboard">
+
+  <!-- KPI SECTION -->
+  <div class="section-label">Key Performance Indicators</div>
+  <div class="kpi-row">
+
+    <div class="kpi-card">
+      <div class="kpi-top" style="background:var(--blue)"></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Total Enterprise Revenue</div>
+        <div class="kpi-value" style="color:var(--blue)">81.2K</div>
+        <div class="kpi-unit">million UZS &nbsp;<span class="kpi-trend trend-up">▲ +115%</span></div>
+        <div class="kpi-desc">Cumulative revenue across 50 firms (2020–2024). Steady growth of 2.15× over the period.</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-top" style="background:var(--teal)"></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Total VAT Refunds</div>
+        <div class="kpi-value" style="color:var(--teal)">30.8K</div>
+        <div class="kpi-unit">million UZS &nbsp;<span class="kpi-trend trend-up">▲ +366%</span></div>
+        <div class="kpi-desc">Refund volumes grew 4.7× faster than revenue, indicating rising fiscal pressure on state budget.</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-top" style="background:var(--orange)"></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Avg. Refund Processing Time</div>
+        <div class="kpi-value" style="color:var(--orange)">62.9</div>
+        <div class="kpi-unit">days &nbsp;<span class="kpi-trend trend-warn">⚠ above target</span></div>
+        <div class="kpi-desc">Industry sector averages 81 days. Each additional day reduces cash flow by ~10.4 mln UZS.</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-top" style="background:var(--red)"></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Avg. Enterprise Cash Flow</div>
+        <div class="kpi-value" style="color:var(--red)">−446.4</div>
+        <div class="kpi-unit">million UZS &nbsp;<span class="kpi-trend trend-up">▲ improving</span></div>
+        <div class="kpi-desc">Negative cash flow confirms liquidity constraints. Improving from −493 (2020) to −380 (2024).</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MIDDLE CHARTS -->
+  <div class="section-label">Revenue &amp; VAT Dynamics</div>
+  <div class="charts-mid">
+
+    <!-- Chart 1: Revenue & VAT Trend -->
+    <div class="chart-card">
+      <div class="chart-title">Enterprise Revenue &amp; VAT Trends (2020–2024)</div>
+      <div class="chart-subtitle">Total enterprise revenue vs VAT refund volumes and negative VAT balances</div>
+      <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+    </div>
+
+    <!-- Chart 2: VAT Refund vs Negative VAT -->
+    <div class="chart-card">
+      <div class="chart-title">VAT Refunds vs Negative VAT Balances — Fiscal Pressure</div>
+      <div class="chart-subtitle">Growing gap between refund obligations and actual reimbursements</div>
+      <div class="chart-wrap"><canvas id="chartBar"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM CHARTS -->
+  <div class="section-label">Enterprise Liquidity Analysis</div>
+  <div class="charts-bot">
+
+    <!-- Chart 3: Scatter -->
+    <div class="chart-card">
+      <div class="chart-title">Refund Processing Delays vs Enterprise Cash Flow</div>
+      <div class="chart-subtitle">Key hypothesis: longer refund delays → lower enterprise liquidity</div>
+      <div class="sector-badges">
+        <span class="sector-badge"><span class="dot" style="background:#1A3558"></span>Industry</span>
+        <span class="sector-badge"><span class="dot" style="background:#3AAFA9"></span>Agriculture</span>
+        <span class="sector-badge"><span class="dot" style="background:#2D6FA4"></span>Trade</span>
+        <span class="sector-badge"><span class="dot" style="background:#E07B39"></span>Services</span>
+        <span class="sector-badge"><span class="dot" style="background:#C0392B"></span>Regression line</span>
+      </div>
+      <div class="chart-wrap-tall"><canvas id="chartScatter"></canvas></div>
+      <div class="stat-box">
+        <b>Pearson r = −0.723</b> &nbsp;|&nbsp; p &lt; 0.001 &nbsp;|&nbsp; n = 200<br>
+        <b>Regression:</b> Cash Flow = 207.3 − 10.39 × Refund Days<br>
+        Each additional day of delay → <b>−10.4 mln UZS</b> cash flow impact
+      </div>
+    </div>
+
+    <!-- Chart 4: Heatmap -->
+    <div class="chart-card">
+      <div class="chart-title">Avg. VAT Refund Processing Time by Sector &amp; Year</div>
+      <div class="chart-subtitle">Industry records the longest delays — greatest liquidity risk</div>
+      <div class="heatmap-container">
+        <table class="heatmap" id="heatmapTable"></table>
+      </div>
+      <div class="heatmap-legend">
+        <span>Faster (fewer days)</span>
+        <div class="legend-grad"></div>
+        <span>Slower (more days)</span>
+      </div>
+      <div class="chart-wrap" style="height:180px;margin-top:14px;">
+        <canvas id="chartSector"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Source: Firm-level financial dataset (n = 200 observations, 50 enterprises, 2020–2024) &nbsp;|&nbsp;
+    Analysis: Pearson correlation, OLS regression &nbsp;|&nbsp;
+    Author's own calculations &nbsp;|&nbsp; MSc BIA Dissertation 2025–2026 &nbsp;|&nbsp; WIUT Tashkent
+  </div>
+
+</div><!-- /dashboard -->
+
+<script>
+// ─── DATA ───────────────────────────────────────────
+const years     = [2020, 2021, 2022, 2023, 2024];
+const revenue   = [10162.6, 12951.0, 16685.3, 19561.5, 21830.0];
+const vatRefund = [1929.9,  5404.6,  6777.9,  7734.6,  8996.6];
+const negVAT    = [7359.5, 10039.0, 12242.0, 15497.0, 16622.0];
+const avgDays   = [58.2, 65.6, 63.15, 64.72, 63.05];
+const avgCF     = [-493.14, -488.90, -451.91, -418.02, -379.96];
+
+const slope     = -10.3856;
+const intercept =  207.3364;
+
+const scatterData = {
+  Industry:    {days:[50,44,95,52,71,46,70,80,70,119,41,108,71,110,82,85,50,73,100,71,60,84,98,119,96,118,99,117,50,92,76,117,63,46,74,76,100,85,87,118,97,107,89,85,80,82,94,49,56,48],cf:[-678.56,-315.32,-1230.78,-594.44,-410.89,-197.34,-429.87,-801.09,-678.3,-1212.12,-601.87,-1534.84,-900.06,-754.46,-530.47,-449.42,-439.51,-590.64,-1328.43,-405.46,-113.9,-389.05,-269.3,-1666.98,-436.74,-761.36,-474.61,-1511.21,-539.07,-1134.0,-809.85,-693.67,-534.44,188.79,-518.82,-457.49,-606.62,-762.77,-1135.94,-1008.26,-626.16,-892.52,-293.03,-502.75,-1103.64,-715.61,-1096.59,-420.73,0.95,-316.84]},
+  Agriculture: {days:[57,45,57,61,37,66,49,46,100,49,100,63,60,72,79,91,98,46,65,85,73,92,87,64,95,82,86,67,61,49,88,78,31,40,70,74,43,34,67,42,81,73,64,39,67,76,97,71,94,44,98,53,91,34,62,86,93,84,34,70,55,41,82],cf:[-645.7,-193.31,-783.09,-409.82,-274.77,-920.39,-184.69,-309.19,-521.89,-308.85,-1138.83,-436.14,-264.99,-322.69,-770.74,-1114.46,-814.13,-555.91,-212.96,-618.34,-309.63,-800.64,-370.42,-651.28,-927.28,-742.45,-712.23,-675.26,-377.1,-109.98,-1058.22,-970.65,-243.2,-233.56,-358.4,-751.65,-317.11,-96.35,-249.76,-144.98,-668.68,-269.94,-249.95,101.93,-223.66,-547.59,-600.32,-152.92,-393.78,212.85,-489.97,-625.33,-445.54,91.5,-202.57,-832.94,-680.33,-682.01,-378.56,-249.86,-317.75,-488.4,-873.53]},
+  Trade:       {days:[25,41,53,60,32,29,30,74,87,85,34,59,36,70,64,45,39,33,74,88,34,36,77,54,70,37,80,32,44,59,28,63,73,67,69,55,34,42,85,78,62,38,28,88,47,42],cf:[-94.94,-179.9,-243.53,-338.66,-144.96,-157.1,-322.79,-396.97,-394.36,-361.69,-140.46,-503.65,-388.78,-771.0,-640.18,-245.35,-409.12,-59.38,-391.81,-1113.62,-276.7,-196.89,-463.7,-213.89,-483.02,-234.08,-579.88,131.48,-241.08,-385.59,-164.73,-697.32,-745.52,-720.89,-688.21,-117.08,-282.34,-167.54,-63.41,-72.02,-314.43,-120.01,-134.08,-529.93,-99.48,-347.1]},
+  Services:    {days:[39,45,36,59,62,33,23,68,41,62,34,69,56,63,20,60,55,47,27,48,20,26,70,49,21,40,53,44,43,27,22,40,24,33,36,40,59,48,65,65,49],cf:[-397.59,-399.48,-238.35,-508.49,-387.99,-280.04,-160.17,-685.71,-173.68,-325.25,-176.02,-848.49,-394.42,-893.42,129.3,-216.15,-191.77,-362.95,-172.33,-130.53,-144.62,82.26,-441.0,-40.47,-78.48,-209.13,-83.48,-417.84,-260.83,-202.86,-53.26,224.11,269.37,-216.06,215.25,73.69,-546.71,-350.67,-483.27,-657.42,-82.02]},
+};
+
+const sectorColors = {
+  Industry:    '#1A3558',
+  Agriculture: '#3AAFA9',
+  Trade:       '#2D6FA4',
+  Services:    '#E07B39',
+};
+
+const heatData = {
+  Industry:    [74.6, 73.0, 107.8, 83.2, 76.7],
+  Agriculture: [56.7, 76.8, 64.3,  70.4, 66.2],
+  Trade:       [38.6, 63.6, 53.4,  54.9, 56.7],
+  Services:    [42.4, 50.2, 40.9,  33.3, 49.4],
+};
+
+// ─── CHART DEFAULTS ─────────────────────────────────
+Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+Chart.defaults.color = '#718096';
+
+// ─── CHART 1: TREND (Line) ──────────────────────────
+new Chart(document.getElementById('chartTrend'), {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [
+      {
+        label: 'Enterprise Revenue',
+        data: revenue.map(v => (v/1000).toFixed(1)),
+        borderColor: '#2D6FA4',
+        backgroundColor: 'rgba(45,111,164,0.08)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 5,
+        pointBackgroundColor: '#fff',
+        pointBorderWidth: 2.5,
+        borderWidth: 2.5,
+        yAxisID: 'y',
+      },
+      {
+        label: 'VAT Refunds',
+        data: vatRefund.map(v => (v/1000).toFixed(1)),
+        borderColor: '#3AAFA9',
+        backgroundColor: 'transparent',
+        tension: 0.35,
+        pointRadius: 5,
+        pointBackgroundColor: '#fff',
+        pointBorderWidth: 2.5,
+        borderWidth: 2.5,
+        yAxisID: 'y2',
+      },
+      {
+        label: 'Negative VAT Balances',
+        data: negVAT.map(v => (v/1000).toFixed(1)),
+        borderColor: '#E07B39',
+        borderDash: [6,3],
+        backgroundColor: 'transparent',
+        tension: 0.35,
+        pointRadius: 5,
+        pointBackgroundColor: '#fff',
+        pointBorderWidth: 2.5,
+        borderWidth: 2.5,
+        yAxisID: 'y2',
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}K mln UZS` } }
+    },
+    scales: {
+      x: { grid: { color: '#DDE3EC' }, ticks: { font: { size: 11 } } },
+      y: {
+        position: 'left',
+        grid: { color: '#DDE3EC' },
+        title: { display: true, text: "Revenue ('000 mln UZS)", font: { size: 10 } },
+        ticks: { font: { size: 10 } }
+      },
+      y2: {
+        position: 'right',
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: "VAT Indicators ('000 mln UZS)", font: { size: 10 } },
+        ticks: { font: { size: 10 } }
+      }
+    }
+  }
+});
+
+// ─── CHART 2: GROUPED BAR ───────────────────────────
+new Chart(document.getElementById('chartBar'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      {
+        label: 'VAT Refunds',
+        data: vatRefund.map(v => (v/1000).toFixed(1)),
+        backgroundColor: 'rgba(58,175,169,0.82)',
+        borderColor: '#3AAFA9',
+        borderWidth: 1.5,
+        borderRadius: 4,
+      },
+      {
+        label: 'Negative VAT Balances',
+        data: negVAT.map(v => (v/1000).toFixed(1)),
+        backgroundColor: 'rgba(224,123,57,0.82)',
+        borderColor: '#E07B39',
+        borderWidth: 1.5,
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}K mln UZS` } }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+      y: {
+        grid: { color: '#DDE3EC' },
+        title: { display: true, text: "Amount ('000 mln UZS)", font: { size: 10 } },
+        ticks: { font: { size: 10 } }
+      }
+    }
+  }
+});
+
+// ─── CHART 3: SCATTER ───────────────────────────────
+const scatterDatasets = Object.entries(scatterData).map(([sec, d]) => ({
+  label: sec,
+  data: d.days.map((day, i) => ({ x: day, y: d.cf[i] })),
+  backgroundColor: sectorColors[sec] + 'BB',
+  borderColor: sectorColors[sec],
+  borderWidth: 1,
+  pointRadius: 5,
+  pointHoverRadius: 7,
+}));
+
+// regression line
+const xMin = 20, xMax = 120;
+scatterDatasets.push({
+  label: 'Regression line',
+  data: [
+    { x: xMin, y: slope * xMin + intercept },
+    { x: xMax, y: slope * xMax + intercept },
+  ],
+  type: 'line',
+  borderColor: '#C0392B',
+  borderWidth: 2.5,
+  pointRadius: 0,
+  fill: false,
+  tension: 0,
+  order: -1,
+});
+
+new Chart(document.getElementById('chartScatter'), {
+  type: 'scatter',
+  data: { datasets: scatterDatasets },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            if (ctx.dataset.label === 'Regression line') return null;
+            return ` ${ctx.dataset.label}: ${ctx.parsed.x} days | ${ctx.parsed.y.toFixed(0)} mln UZS`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: '#DDE3EC' },
+        title: { display: true, text: 'Refund Processing Time (days)', font: { size: 11 } },
+        min: 15, max: 125,
+        ticks: { font: { size: 10 } }
+      },
+      y: {
+        grid: { color: '#DDE3EC' },
+        title: { display: true, text: 'Enterprise Cash Flow (mln UZS)', font: { size: 11 } },
+        ticks: { font: { size: 10 } }
+      }
+    }
+  }
+});
+
+// ─── HEATMAP TABLE ──────────────────────────────────
+(function buildHeatmap() {
+  const table = document.getElementById('heatmapTable');
+  const allVals = Object.values(heatData).flat();
+  const vMin = Math.min(...allVals);
+  const vMax = Math.max(...allVals);
+
+  function interpolateColor(val) {
+    const t = (val - vMin) / (vMax - vMin);
+    // low = #D6EAF8  mid = #2980B9  high = #1A3558
+    const stops = [
+      [214, 234, 248],
+      [41,  128, 185],
+      [26,  53,  88],
+    ];
+    let r, g, b;
+    if (t < 0.5) {
+      const u = t * 2;
+      r = stops[0][0] + u * (stops[1][0] - stops[0][0]);
+      g = stops[0][1] + u * (stops[1][1] - stops[0][1]);
+      b = stops[0][2] + u * (stops[1][2] - stops[0][2]);
+    } else {
+      const u = (t - 0.5) * 2;
+      r = stops[1][0] + u * (stops[2][0] - stops[1][0]);
+      g = stops[1][1] + u * (stops[2][1] - stops[1][1]);
+      b = stops[1][2] + u * (stops[2][2] - stops[1][2]);
+    }
+    const textColor = t > 0.55 ? '#ffffff' : '#1C2B3A';
+    return { bg: `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`, text: textColor };
+  }
+
+  // header row
+  const thead = document.createElement('thead');
+  const hrow  = document.createElement('tr');
+  ['Sector', ...years.map(y => String(y))].forEach((h, i) => {
+    const th = document.createElement('th');
+    th.textContent = h;
+    if (i === 0) th.className = 'row-header';
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);
+  table.appendChild(thead);
+
+  // body
+  const tbody = document.createElement('tbody');
+  Object.entries(heatData).forEach(([sec, vals]) => {
+    const row = document.createElement('tr');
+    const labelTd = document.createElement('td');
+    labelTd.textContent = sec;
+    labelTd.style.textAlign = 'left';
+    labelTd.style.paddingLeft = '10px';
+    labelTd.style.background = '#F7F9FC';
+    labelTd.style.fontWeight = '700';
+    labelTd.style.fontSize = '12px';
+    labelTd.style.color = sectorColors[sec];
+    row.appendChild(labelTd);
+
+    vals.forEach(v => {
+      const td = document.createElement('td');
+      const { bg, text } = interpolateColor(v);
+      td.style.background = bg;
+      td.style.color = text;
+      td.textContent = v + 'd';
+      td.title = `${sec} ${years[vals.indexOf(v)]}: ${v} days avg`;
+      row.appendChild(td);
+    });
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+})();
+
+// ─── SECTOR BAR (avg cash flow) ─────────────────────
+new Chart(document.getElementById('chartSector'), {
+  type: 'bar',
+  data: {
+    labels: ['Agriculture', 'Industry', 'Services', 'Trade'],
+    datasets: [
+      {
+        label: 'Avg Cash Flow (mln UZS)',
+        data: [-474.1, -673.7, -249.2, -337.1],
+        backgroundColor: ['#3AAFA9CC', '#1A3558CC', '#E07B39CC', '#2D6FA4CC'],
+        borderColor: ['#3AAFA9', '#1A3558', '#E07B39', '#2D6FA4'],
+        borderWidth: 1.5,
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` Avg CF: ${ctx.parsed.x.toFixed(1)} mln UZS` } }
+    },
+    scales: {
+      x: {
+        grid: { color: '#DDE3EC' },
+        title: { display: true, text: 'Average Cash Flow (mln UZS)', font: { size: 9.5 } },
+        ticks: { font: { size: 9.5 } }
+      },
+      y: { grid: { display: false }, ticks: { font: { size: 10.5, weight: '600' } } }
+    }
+  }
+});
+</script>
+</body>
+</html>
